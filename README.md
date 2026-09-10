@@ -81,6 +81,11 @@ reports **2 escapes**, both from the embedded Google Map:
 - `maps.googleapis.com/maps/api/js?key=…`
 - `maps.gstatic.com/maps-api-v3/embed/js/…`
 
+Driving the **published** URL in a browser shows a third host the gate does not count —
+`places.googleapis.com/$rpc/…/GetPlace` — because that XHR is issued from inside the map
+`<iframe>`, a realm the gate does not instrument. Recorded here rather than left to the gate's
+number: **the gate's count is a floor, not a total.**
+
 They are **not** tracking. They are the map the page renders. Removing them would blank a
 visible part of the design this preview exists to review, so the map is left intact and
 surfaced here rather than hidden — the same call made for the search form on
