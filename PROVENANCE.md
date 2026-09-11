@@ -1,125 +1,126 @@
 # PROVENANCE
 
-A byte-faithful capture, then deliberately modified for public hosting. Because it was
-modified, **this bundle is no longer a faithful record of what the server sent**, and must
-not be cited as one. Every deviation is listed below.
+A capture of **every page** of `https://lavaleaforganics.com/`, then deliberately modified for
+public hosting. Because it was modified, **this bundle is not a faithful record of what the
+server sent** and must not be cited as one. Every deviation is listed below.
 
 ## Capture
 
 | | |
 | --- | --- |
-| Source | `https://lavaleaforganics.com/` |
-| Captured | 2026-09-10 |
-| Method | clone-site pipeline, Clone Stages 1–5 (Playwright + CDP) |
-| Shape | SP (single page); all CSS inlined per output-spec §C.2 |
-| Age gate | Capture taken past the 21+ gate by seeding `age_verification=verified`, the cookie the source's own `age-verification.min.js` sets on "YES". No other cookie was seeded. |
+| Source | `https://lavaleaforganics.com/` — 11 pages (the site's sitemap: 10 live pages + its 404 page) |
+| Captured | 2026-09-10, one page at a time |
+| Method | clone-site pipeline, Clone Stages 1–5 (Playwright + CDP), multi-page shape |
+| Age gate | Captured past the 21+ gate by seeding `age_verification=verified` — the cookie the site's own `age-verification.min.js` sets on "YES". No other cookie was seeded. |
+| HTML source | For 10 of 11 pages, the raw body of the same response whose inline styles were captured, so builder element ids and their styles stay consistent. The 404 page is served with HTTP 404, which the capture step does not keep as a body, so it used a second request; that page has no id-keyed styles, so nothing was lost. |
 
 ## Deviations from the captured bytes
 
-Ordered as applied. "Rendered" = whether the change can affect the pixel output.
+"Rendered" = whether the change can affect what is painted.
 
-| # | Change | File | Rendered? |
-| --- | --- | --- | --- |
-| 1 | Global transport guard + `<meta name="referrer" content="no-referrer">` inserted as the first children of `<head>` | `index.html` | No |
-| 2 | `<title>` prefixed `UNOFFICIAL PREVIEW — ` | `index.html` | No |
-| 3 | `meta[name=description]` replaced with preview disclosure text | `index.html` | No |
-| 4 | `og:title`, `og:url`, `og:site_name`, `og:description` rewritten to preview identity | `index.html` | No |
-| 5 | `og:image`, `og:image:secure_url`, `twitter:image` **deleted** (hotlinked the client's logo from the client's server) | `index.html` | No |
-| 6 | `twitter:card` → `summary`; `twitter:title`, `twitter:description` rewritten | `index.html` | No |
-| 7 | `robots` `index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1` → `noindex, nofollow, noarchive, nosnippet` | `index.html` | No |
-| 8 | `meta[name=google-site-verification]` **deleted** | `index.html` | No |
-| 9 | 3 × `schema.org` JSON-LD blocks **deleted** (`Organization`, `WebSite`, and a `Store` block with full NAP + the internal staging hostname) | `index.html` | No |
-| 10 | `Defaults.base_url`, `Defaults.admin_url`, `Defaults.current_url` blanked (`admin_url` disclosed `/sg-admin/`). `age_verification_expiry` left intact. | `index.html` | No |
-| 11 | `window.__SG_TRACK__` config **deleted** | `index.html` | No |
-| 12 | Search form `action="https://lavaleaforganics.com/search"` removed; original value preserved as `data-action-removed-at-publish` | `index.html` | No |
-| 13 | GTM `<noscript><iframe src="…googletagmanager.com/ns.html?id=GTM-NPSTL9W8">` **deleted** | `index.html` | No |
-| 14 | 8 hotlinked Instagram images rewritten to local copies, matched by md5 | `index.html` | No (byte-identical files) |
-| 15 | `assets/front/js/sg-analytics.js` **deleted** (11,239 B) | — | No (was unreferenced) |
-| 16 | `sg-collect.html` **deleted** (0 B stub) | — | No |
-| 17 | `grep.exe.stackdump` **deleted** (1,729 B) — a crash dump from the build machine's own tooling, not site content | — | No |
-| 18 | `_xorigin/app.tryumbrella.com/` **deleted** (365 KB) | — | No |
-| 19 | `_xorigin/www.googletagmanager.com/` **deleted** (849 KB) | — | No |
-| 20 | `_xorigin/{c,www,z,scripts}.clarity.ms/` **deleted** (4 hosts) | — | No |
-| 21 | `_xorigin/lavaleaforganics.staging.sgen.com/` **deleted** (8 files) — captured from SGEN's internal staging host. Unreferenced: every one of those images already resolves via a local `assets/in-pages/` copy, verified per filename before deleting. | — | No |
-| 22 | Internal staging hostname removed from an inline accessibility script's CSS selector (`[href$="…staging.sgen.com/"]` → the public host) | `index.html` | No |
-| 23 | `sites/sgen_lavaleaforganics_staging_sgen_com/` renamed to `sites/media/`, and its 23 image references rewritten | `index.html` + tree | No (same bytes, new path) |
-| 24 | `data-clone-stage-3="sp-inline"` attribute stripped from the `<style>` tag — an internal build-pipeline marker. The sibling published preview ships no such attribute; this one does not either. | `index.html` | No |
-| 24a | **`_xorigin/maps.googleapis.com/` deleted (18 files, 1.6 MB) — it contained a live signed Google service-account bearer JWT.** See below. | — | No (0 references) |
-| 24b | `_xorigin/places.googleapis.com/` deleted (1 file) — a captured Places RPC response holding the client's business record. Unreferenced. | — | No |
-| 24c | `_xorigin/maps.gstatic.com/` deleted (2 files, 253 KB) — unreferenced; the map loads these from Google directly. | — | No |
-| 25 | `.nojekyll`, `.gitattributes`, `.gitignore`, `README.md`, this file added | — | No |
-| 26 | `project/` flattened to repo root so Pages serves `/client-lavaleaforganics/` | — | No |
+### Leak and identity hardening (every page)
 
-Changes 21–23 remove **SGEN's internal tenant slug and staging hostname**. The client's public
-site already serves `sites/sgen_lavaleaforganics_com/…` so that path is mirrored verbatim per
-output-spec §K.1 and kept; the `…_staging_sgen_com` variant is *not* public on the client's site
-and is not reproduced here. This is a deliberate departure from strict path-mirroring, made
-because the bundle is published to a public host.
+| # | Change | Rendered? |
+| --- | --- | --- |
+| 1 | Global transport guard (`fetch` / `XMLHttpRequest` / `sendBeacon`) + `<meta name="referrer" content="no-referrer">` inserted as the first children of `<head>` | No |
+| 2 | `<title>` prefixed `UNOFFICIAL PREVIEW — `; `meta[name=description]` replaced with a preview disclosure | No |
+| 3 | `og:title` / `og:url` / `og:site_name` / `og:description` rewritten to preview identity; `og:url` points at each page's own preview URL | No |
+| 4 | `og:image`, `og:image:secure_url`, `twitter:image` deleted (they hotlinked the client's logo from the client's server); `twitter:*` rewritten, card downgraded to `summary` | No |
+| 5 | `robots` `index, follow, …` → `noindex, nofollow, noarchive, nosnippet` | No |
+| 6 | `google-site-verification` meta deleted | No |
+| 7 | `schema.org` JSON-LD blocks deleted (business identity; one also carried an internal hostname) | No |
+| 8 | `Defaults.base_url` / `admin_url` / `current_url` blanked (`admin_url` disclosed the client's back-office path) | No |
+| 9 | `window.__SG_TRACK__` analytics config deleted | No |
+| 10 | Search form `action` removed (it posted visitors' queries to the client's server); original kept as `data-action-removed-at-publish` | No |
+| 11 | Live Google Tag Manager `<noscript><iframe>` deleted | No |
+| 12 | 75 hotlinked client-origin asset references rewritten to byte-identical local copies, resolved through the capture manifests **by content hash**, never by filename | No (same bytes) |
 
-## Unreferenced files that DO ship
+### Removed files (captured, never part of the site's own content)
 
-An orphan sweep (nothing in the HTML/CSS/JS references them) leaves 34 files / ~2.2 MB:
-Google Maps API JS chunks and unused Google font weights under `_xorigin/`, plus extra captured
-images under `assets/full-library/`. They are kept because `assets/full-library/` is the
-pipeline's by-design captured-image library, and the Google files are public CDN assets with no
-disclosure value. They cannot affect rendering. Everything unreferenced that *did* carry
-disclosure value — the tag-manager, Clarity and tryumbrella captures, the staging-host images,
-the tooling crash dump — was deleted (changes 15–21).
+| # | Removed | Why |
+| --- | --- | --- |
+| 13 | `assets/front/js/sg-analytics.js`, `sg-collect.html` | First-party analytics tracker and its collector stub |
+| 14 | Captured Google Tag Manager, Microsoft Clarity (11 hosts), and an identity/ad-tech platform's scripts | Tracking payloads; unreferenced |
+| 15 | Captured Google Maps / Places RPC responses | One held a signed Google service-account bearer token minted for the capture session (see below) |
+| 16 | A duplicate copy of the e-commerce menu loader and a captured image directory from another business's website | Unreferenced |
+| 17 | A capture directory from the client's staging server | Unreferenced — every image in it already resolves via a local copy |
+| 18 | Mirrored duplicate copies of three page documents and of one placeholder image | Unreferenced once the page links were repaired (#23) |
 
-Change 14 was resolved by **content hash via the Stage 1 manifest**, not by filename:
-collision-renaming during emit means `5.webp` and `5-2.webp` are different images, so
-filename matching would have silently substituted the wrong picture in four places.
+### Live embeds made inert
+
+| # | Change | Rendered? |
+| --- | --- | --- |
+| 19 | **Ordering menu (`shop.html`)**: the e-commerce provider's loader injected an iframe serving the client's live, orderable menu. Loader removed; replaced by an inert placeholder of the identical structure and size (`#dutchie--embed__container` > iframe, `width:100%`, `height:100vh`, **no `src`**). | Same layout; the live capture shows this region blank |
+| 20 | **Maps (9 iframes on 8 pages)**: Google Maps embeds use the client's API key, which is referrer-locked to their domain — on this preview each rendered Google's "Oops! Something went wrong" (`RefererNotAllowedMapError`) while still sending requests with the key. Each iframe element is kept (so every iframe-targeted style still applies) but has no `src`; its `srcdoc` shows a static image of that same map as the live site renders it, captured with page overlays hidden. | Map region: a picture instead of an interactive map |
+| 21 | **Unloadable images (`farmington-nm-dispensary.html`)**: 9 images hotlinked from a third-party host whose TLS certificate is not valid for that hostname (`ERR_CERT_COMMON_NAME_INVALID` in Chromium) — broken for every visitor on the live site too. 10 URL references replaced with a 1×1 transparent image; 2 preloads for them removed. | Same as a failed load |
+
+### Internal identifiers
+
+| # | Change | Rendered? |
+| --- | --- | --- |
+| 22 | An internal staging hostname (13 references: an accessibility script's selector on every page, and two body links pointing *at* the staging host) → the client's public host; a tenant path segment that is not public on the client's site (43 references) → the neutral `sites/media/` | No (same bytes, new path) |
+
+### Multi-page structure repairs
+
+The capture pipeline's multi-page emitter introduced defects that would have broken the site's
+behaviour. Each was repaired here and each is a known pipeline defect rather than site content.
+
+| # | Defect | Repair |
+| --- | --- | --- |
+| 23 | Root-relative links between pages (`/about-us`, `/service-areas/…`) were not rewritten — on this host they would 404 | Rewritten to the sibling files |
+| 24 | 9 of 11 `<link rel="canonical">` tags had been rewritten to local files (one to a raw duplicate page) | Restored to each page's own client URL |
+| 25 | The site URL had been string-substituted *inside* longer URLs: 30 × `href="index.htmlsites/…"`, 6 × `href="shop.html/…"` | Repaired to the real local file (`sites/…`), or to `404.html` for links that are dead on the live site |
+| 26 | 1 link is an unrendered `{{site_url}}` template string on the client's page (dead on the live site) | → `404.html` |
+| 27 | Links to `/learn` (dead on the live site) | → `404.html`, where the real site sends visitors |
+| 28 | Every page's inline `<style>` elements had been merged into one block. The source ships them separately, so an unbalanced rule in one (a stray `}`) was contained; merged, it swallowed the next rule — silently dropping a section's 152 px/100 px padding on `contact-us` | Split back into separate `<style>` elements at the capture's own chunk boundaries: 11 blocks → 298 elements, same order, same bytes |
+| 29 | Two Google Fonts stylesheets from **inside** the map iframes' documents were merged into the pages' shared `chrome.css` — the live pages never load them | Both chunks removed from `chrome.css` (`@font-face` rules only, 165,965 bytes; the file re-parses with 0 errors), then the 115 font files only they referenced (Google Sans, Google Sans Text, Roboto) deleted. No page requested any of them at render (checked on all 11 pages at 2 widths). Google Sans is not an open-licensed family, so this also ends re-serving it. |
+| 30 | Internal build-pipeline markers on `<style>` tags | Removed |
+
+### Publishing
+
+| # | Change |
+| --- | --- |
+| 31 | `.nojekyll`, `.gitattributes`, `.gitignore`, `README.md`, this file added |
+| 32 | Pipeline `README.md` replaced |
 
 ## Deliberately NOT changed
 
 | | Why |
 | --- | --- |
-| `<link rel="canonical">` → `https://lavaleaforganics.com/` | Correct for a duplicate: consolidates search signal to the real site. Deliberately treated differently from `og:url`, which drives unfurl cards and must not impersonate the business. |
-| Outbound nav links to the client's site | Intended behaviour for a preview. Mitigated by `no-referrer`, not blocked. |
-| Embedded Google Map | Rendered content. Removing it would blank a visible region of the design under review. It is the sole remaining off-origin request (Gate 13 reports 2 escapes) and it uses the **client's** Maps API key. |
-| Favicon (client logo, local copy) | Matches house practice on sibling previews. |
-| `/* === source: https://lavaleaforganics.com/assets/… === */` comments in the inline CSS | Inert provenance markers recording which stylesheet each block came from. They are comments, not loads — verified. |
-| Cart endpoint URLs in inline config | Left in place as a record of what the source did; neutralised at the transport layer by the guard rather than by editing them out. |
-| `<meta name="sgen_version" content="SGEN v1.0">` | Verified present on the **live public client site** and on the sibling published preview, so it discloses nothing that is not already public. Mirrored verbatim. |
-| `_xorigin/fonts.gstatic.com/s/googlesans*/` (~100 `.woff2`) | Google Sans is proprietary, not open-licensed, and re-serving it from a third-party host is questionable. **Not** deleted, because the mirrored Maps embed references these files and removing them would change what the map renders. Flagged in README as a decision, not settled. |
+| `<link rel="canonical">` → the client's URL, on every page | Correct for a duplicate; deliberately different from `og:url` |
+| Links to pages outside this set (cart, checkout, online menu) | Intended for a preview; mitigated by `no-referrer`, not blocked |
+| Favicon (client logo, local copy) | Matches house practice on sibling previews |
+| `<meta name="sgen_version">` | Present on the live public site; discloses nothing new |
+| `/* === source: … === */` comments in `chrome.css` | Inert provenance markers naming each stylesheet's public source URL |
+| Cart endpoint URLs in inline configuration | Neutralised at the transport layer by the guard |
 
-## A captured credential, and why history was rewritten
+## A captured credential, and repository history
 
-`_xorigin/maps.googleapis.com/$rpc/…/GetPlaceWidgetMetadata.html` contained a **live signed
-RS256 bearer token** minted by Google for the crawling session:
+An earlier publish of this repository (single-page shape) contained a captured Google
+service-account bearer token (`scope: maps-platform.places.details`, one-hour validity), found by a
+pre-publish audit after the first push. It had already expired when found and belonged to Google's
+own service account, not the client's. It was removed and the commit force-pushed. A force-push
+makes the old commit unreachable but does not delete it: GitHub can still serve it by commit hash.
+That earlier version's own `PROVENANCE.md` also named internal hostnames. **Only deleting and
+recreating the repository removes that history.**
 
-```
-iss/sub : maps-js-embed-internal@place-ui-kit-js-internal.iam.gserviceaccount.com
-scope   : https://www.googleapis.com/auth/maps-platform.places.details
-iat/exp : 1789033382 / 1789036982  (one-hour validity)
-```
+## How the pixel comparison was taken
 
-This is the "captured third-party credential" case: Stage 1 mirrors **response bodies** from
-third-party endpoints, and those responses are minted for *the machine doing the crawl*. It was
-found by an adversarial pre-publish audit, not by the pipeline — the bundle passed every static
-gate with the token inside it.
-
-**The token was already expired** when it was found (~10 minutes past `exp`), and it is Google's
-own internal service account, not the client's. It was nevertheless removed and the repository's
-single commit was **amended and force-pushed**, because a forward commit does not remediate a
-disclosure: the old blob stays fetchable at `raw.githubusercontent.com/<org>/<repo>/<old-sha>/…`.
-Stated plainly: a force-push makes the old commit unreachable, but GitHub may retain unreachable
-objects addressable by SHA until they are garbage-collected. Treat the token as having been
-briefly public.
-
-**Durable pipeline fix, still outstanding:** Clone Stage 1 should refuse to persist response
-bodies from analytics / ad / identity / RPC hosts at capture time, so this class never reaches a
-bundle.
+The capture step's standard screenshot harness clicks every toggle on a page *before* it takes its
+screenshots. On these pages that left the accessibility drawer and the mobile menu open in the build
+screenshots and scored them 21–89% against the live references. It is a measurement artefact —
+a fresh load of every page has both closed. The figures in README.md come from build screenshots
+taken with the capture step's own pre-screenshot sequence and viewports, without the click walk,
+compared by the unmodified Stage 4 script against the same live references.
 
 ## Not published
 
-`audit.json` — the pipeline's own audit record. It carries absolute Windows build paths
-from the capture machine. Gate numbers derived from it are quoted in `README.md` instead.
+`audit.json` — the pipeline's audit record. It carries absolute build paths from the capture machine.
 
 ## Verification after modification
 
-- Stage 4 pixel diff re-run on the FINAL published tree: **PASS 6/6** (96.984 / 99.663 /
-  99.641 / 99.329 / 99.796 / 99.656). Hardening did not degrade fidelity. Figures move between
-  runs because two page regions are genuinely dynamic; every run passed 6/6.
-- Stage 5 on the published tree: **11/12** (Gate 1 fails on the flattened layout, by design).
-- Gate 13 runtime off-origin: **11 escapes → 2**, the remainder being the Google Map.
+- **Stage 4 pixel diff** (clean capture, 11 pages × 6 viewports, gate 0.95): 8/11 pass as measured; index, service-areas and 404 fall below solely at the static map frame, which the live capture shows blank. Excluding the map frames, every page scores 96.99–100%. Full table in README.md.
+- **Stage 5 bundle audit** on this published tree: 12/12 gates; 0 hard, 2 soft (source-derived CSS).
+- **Gate 13 (runtime off-origin)**, all 11 pages: 0 escapes, 0 off-origin navigations. Its formal verdict is FAIL because its exerciser is interrupted by in-site navigation, and it fails closed on an interrupted exercise; its count is therefore a floor.
+- **Publish gate**: every page and every file (docs included) — no client identity in unfurl tags, no tracker, no live embed, no hotlinked or off-allowlist subresource, no credential, no internal hostname or tenant identifier, no unfilled placeholder.
+- **Rendering and links**, served at this preview's subpath: 22/22 page-viewports render with 0 missing images and 0 local 404s; 0 relative links fail to resolve. All 16 visible static-map frames paint their image, with 0 off-origin requests.

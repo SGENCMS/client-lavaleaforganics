@@ -1,13 +1,13 @@
 # client-lavaleaforganics
 
 Static preview bundle of **lavaleaforganics.com** (Lava Leaf Organics — Farmington, NM
-cannabis dispensary) — cloned landing page, captured by the clone-site pipeline
-(Clone Stages 1–5).
+cannabis dispensary) — **all pages of the site**, captured by the clone-site pipeline
+(Clone Stages 1–5) and hardened for public hosting.
 
 **Preview: https://sgencms.github.io/client-lavaleaforganics/**
 
 Pure static. No build step, no dependencies, no backend. Open `index.html` or use the
-preview link above.
+preview link above. Navigation between the pages stays inside the preview.
 
 > This is an **unofficial development copy** published for build review. It is not
 > operated by, affiliated with, or endorsed by Lava Leaf Organics. The real site is
@@ -18,178 +18,150 @@ preview link above.
 | File | Source |
 | --- | --- |
 | `index.html` | `https://lavaleaforganics.com/` |
+| `about-us.html` | `https://lavaleaforganics.com/about-us` |
+| `contact-us.html` | `https://lavaleaforganics.com/contact-us` |
+| `farmington-nm-dispensary.html` | `https://lavaleaforganics.com/farmington-nm-dispensary` |
+| `privacy-policy.html` | `https://lavaleaforganics.com/privacy-policy` |
+| `service-areas.html` | `https://lavaleaforganics.com/service-areas` |
+| `downtown-farmington.html` | `https://lavaleaforganics.com/service-areas/downtown-farmington` |
+| `north-farmington.html` | `https://lavaleaforganics.com/service-areas/north-farmington` |
+| `west-farmington.html` | `https://lavaleaforganics.com/service-areas/west-farmington` |
+| `shop.html` | `https://lavaleaforganics.com/shop` |
+| `404.html` | `https://lavaleaforganics.com/404` (the site's own "page not found" page) |
 
-All CSS is inlined into a single `<style>` block in `<head>` (output-spec §C.2, SP shape),
-so there is no sibling stylesheet to serve.
+Shared styles live in `chrome.css`; each page carries its own inline styles.
 
-### What this page actually is
+### How "all pages" was determined
 
-The source is a full single-page homepage behind a 21+ age gate: hero, product-category
-grid, an Instagram strip, an FAQ accordion, a brands rail, a testimonials carousel, store
-info with an embedded Google Map, and a long "first visit" ordering guide.
+The page set is the site's own sitemap (`/sitemaps/sitemap-pages.xml`, 11 URLs), cross-checked
+by crawling every internal link on every one of those pages. The crawl surfaced 22 further
+URLs, and none of them is a separate page:
 
-The capture was taken **past the age gate**. The gate's own markup and CSS are still in the
-bundle, but the cookie it sets (`age_verification=verified`) was seeded at capture time, so
-the page renders as a returning visitor sees it.
+- ~20 are `/shop?dtche[...]=…` — filter and sort states of the same `/shop` menu, not pages.
+- `/learn`, `/shop/accessories/accessories` and five `/shop/albuquerque/…` links **are broken on
+  the live site itself**: each redirects to, or returns, the client's 404 page. In this preview
+  they point at `404.html`, which is where a visitor to the real site ends up.
+- One link is an unrendered template string (`{{site_url}shop…`) on the client's page, which also
+  lands on their 404 page. Same treatment.
+
+`robots.txt` disallows `/register`, `/login` and `/sg-admin/`; none of them were captured.
 
 ## Verification
 
 Captured and checked by the pipeline, not by eye.
 
-| Gate | Result |
+| Check | Result |
 | --- | --- |
-| Stage 4 — pixel diff vs live source, 6 viewports | **PASS 6/6** |
-| Stage 5 — bundle audit, re-run on **this published tree** | **11/12** |
-| Stage 5 — Layer 2 assertions | **0 hard, 0 soft** |
-| Stage 5 — Gate 13, runtime off-origin requests | **FAIL — 2 escapes (the Google Map)** |
+| Stage 4 — pixel diff vs live source, 11 pages × 6 viewports | **8 of 11 pass as measured; 3 are below 0.95 (index, service-areas, 404) — each solely because of the static map frame (see below). Outside the map frames every page is 96.99–100%.** |
+| Stage 5 — bundle audit, re-run on **this published tree** | **12 / 12 gates; Layer 2: 0 hard, 2 soft (source-derived `transition: all` and a hardcoded colour in `chrome.css`)** |
+| Gate 13 — runtime off-origin requests, all 11 pages | **0 off-origin requests, 0 off-origin navigations. Formal verdict FAIL: its exerciser clicks in-site links, which navigate between pages (22 times), and it fails closed when an exercise is interrupted** |
+| Publish gate — per-page and tree-wide leak assertions | **PASS — 11 pages, every file (docs included)** |
+| Rendering — every page at 2 viewports, served at this preview's subpath | **22 / 22 page-viewports render; 0 missing images; 0 local 404s** |
+| Links — every relative link on every page resolves to a file in the bundle | **0 unresolved** |
 
-Per-viewport pixel match against the live site, measured on the **hardened** bundle
-(gate is 0.95):
+Per-page pixel match against the live site (gate is 0.95):
 
-| Viewport | Match |
-| --- | --- |
-| 1440×900 large desktop | 96.984% |
-| 1280×800 standard desktop | 99.663% |
-| 1024×768 large tablet | 99.641% |
-| 768×1024 small tablet | 99.329% |
-| 430×932 large phone | 99.796% |
-| 390×844 standard phone | 99.656% |
+| Page | Match, worst → best viewport | Outside the map frames |
+| --- | --- | --- |
+| `index.html` | 94.888% → 97.716% | 96.99% → 99.99% |
+| `about-us.html` | 95.555% → 97.965% | 98.02% → 100.00% |
+| `contact-us.html` | 98.736% → 99.372% | 100.00% |
+| `farmington-nm-dispensary.html` | 100.000% | — (no map) |
+| `privacy-policy.html` | 100.000% | — (no map) |
+| `service-areas.html` | 92.981% → 95.559% | 100.00% |
+| `downtown-farmington.html` | 99.453% → 99.774% | 100.00% |
+| `north-farmington.html` | 99.525% → 99.823% | 100.00% |
+| `west-farmington.html` | 99.484% → 99.808% | 100.00% |
+| `shop.html` | 99.990% → 100.000% | — (no map) |
+| `404.html` | 91.982% → 94.309% | 99.95% → 99.98% |
 
-These are re-derived from the **final published tree**, not carried over from an earlier
-revision — a sibling preview's README once shipped gate numbers copied from a pre-flatten
-bundle, so they are re-run here rather than reused.
+**Why three pages are below 0.95.** On those pages the live reference capture shows the map area
+*blank*: the site loads its map lazily and it had not painted when the page was photographed. This
+preview shows a static image of the map there (change 8) — which is what a real visitor to the live
+site sees once the map loads. The third column measures each page with the map frames excluded:
+everything else matches. The map was not blanked to pass the gate.
 
-The residual is **not** drift: it is the two genuinely dynamic regions of the page — the live
-Instagram photo strip and the rotating testimonials carousel — which serve different content
-on every load. Verified by reading the diff images, where the mismatch is confined to exactly
-those two blocks. It is also why the per-viewport figures move between runs: an immediately
-preceding run of the same bundle scored 99.808% at 1440 and 100.000% at 430. **Any single
-run's number is a sample of that dynamic content, not a fidelity measurement to three
-decimal places.** Every run has passed 6/6.
+The pixel figures come from build screenshots taken with the capture step's own pre-screenshot
+sequence (load, scroll the whole page, return to top, settle, then screenshot each viewport). The
+pipeline's standard harness takes its screenshots *after* clicking every toggle on the page, which
+left the site's accessibility drawer and mobile menu open in the captures and scored the same
+pages 21–89% — a measurement artefact, not a difference in the pages. See PROVENANCE.md.
 
-### Why Gate 1 fails
-
-Gate 1 wants the pipeline's `project/` subdirectory. It is flattened to the repo root here
-so GitHub Pages can serve `/client-lavaleaforganics/` directly. The capture is not wrong;
-the published layout differs from the pipeline's by design.
-
-### Why Gate 13 fails, and what it means
-
-Gate 13 renders the bundle over HTTP and fails on any programmatic off-origin request. It
-reports **2 escapes**, both from the embedded Google Map:
-
-- `maps.googleapis.com/maps/api/js?key=…`
-- `maps.gstatic.com/maps-api-v3/embed/js/…`
-
-Driving the **published** URL in a browser shows a third host the gate does not count —
-`places.googleapis.com/$rpc/…/GetPlace` — because that XHR is issued from inside the map
-`<iframe>`, a realm the gate does not instrument. Recorded here rather than left to the gate's
-number: **the gate's count is a floor, not a total.**
-
-They are **not** tracking. They are the map the page renders. Removing them would blank a
-visible part of the design this preview exists to review, so the map is left intact and
-surfaced here rather than hidden — the same call made for the search form on
-`client-treeoflifenv`.
-
-**The honest cost:** that request carries the *client's own* Google Maps API key, so map
-loads from this preview draw on the client's Maps quota. Nothing else in the bundle reaches
-any third party.
-
-Before hardening this gate reported **11** escapes, including
-`https://lavaleaforganics.com/do_shopping/cart_state` — a call to the client's **production**
-server that returns a session cookie, writing anonymous preview visitors into the client's
-logs. That class is now blocked (see change 4).
+Where a page is below 100%, the residual is the site's genuinely dynamic content — the live
+Instagram strip and the rotating testimonials — which serves different items on every load.
 
 ## Changes made to the capture
 
-This is a public copy of a client's page, so the following were changed from what was
-captured. They are deliberate, and they are the only edits to the source markup. Every one
-is recorded in `PROVENANCE.md`.
+This is a public copy of a client's site, so the following were changed from what was captured.
+They are deliberate. Every one is listed, with counts, in `PROVENANCE.md`.
 
-1. **`noindex, nofollow, noarchive, nosnippet`.** The source served
-   `index, follow, max-image-preview:large`. A public duplicate of a client's page must not
-   compete with the client's own site in search results.
-2. **Social/unfurl metadata rewritten.** The source `og:`/`twitter:` tags carried the
-   client's real title, `og:site_name`, description and a **hotlinked** logo, with `og:url`
-   pointing at `lavaleaforganics.com`. `noindex` governs search indexers only — it does
-   **not** stop link-preview crawlers (Slack, Teams, Facebook, X, LinkedIn, Discord,
-   iMessage), so pasting this URL rendered a card indistinguishable from a share of the
-   official dispensary, and drew image bandwidth off the client's own server. The tags now
-   identify the page as an unofficial preview and point at this preview's own URL;
-   `og:image`, `og:image:secure_url` and `twitter:image` were removed outright. Three
-   `schema.org` JSON-LD blocks (`Organization`, `WebSite`, and a `Store` block carrying the
-   full name/address/phone **and the internal staging hostname**) were removed for the same
-   reason. None of this is rendered, so the pixel match is unaffected.
-3. **Google Search Console token removed.** The source shipped a
-   `google-site-verification` meta tag; a site-ownership proof must not be republished on a
-   host the client does not control.
-4. **All programmatic calls to the client's production API are blocked**, by a global
-   transport guard in the first `<script>` of `index.html` that wraps `fetch`,
-   `XMLHttpRequest` and `navigator.sendBeacon` and rejects anything off-origin. It guards
-   the **transport, not each caller**, because the production URLs are injected as inline
-   config (`Defaults.base_url`, `window.__SG_TRACK__`) and consumed by other files — a
-   per-file guard could never cover them.
-5. **First-party SGEN analytics removed.** The source carried
-   `window.__SG_TRACK__ = {"url":"https://lavaleaforganics.com/sg-collect",…}` and shipped
-   `assets/front/js/sg-analytics.js`, which POSTs pageviews and interaction events to the
-   client's collector. Both are gone, along with the mirrored `sg-collect.html` stub.
-6. **Google Tag Manager removed.** A live `<noscript><iframe>` pointing at the client's real
-   container (`GTM-NPSTL9W8`) would have fired the client's analytics on every preview
-   visit. The tag is gone, and the orphaned GTM (849 KB), Microsoft Clarity (4 hosts) and
-   `app.tryumbrella.com` (365 KB) payloads were pruned from `_xorigin/`.
-7. **Client back-office path blanked.** `Defaults.admin_url` disclosed
-   `https://lavaleaforganics.com/sg-admin/`. `base_url` and `current_url` were blanked with it.
-8. **Hotlinked images localised.** Nine images — the logo and the eight Instagram tiles —
-   were still being fetched from the client's server at render time. They now resolve to
-   byte-identical local copies, matched by **content hash** (filename matching would have
-   picked the wrong files: collision-renaming meant `5.webp` and `5-2.webp` are different images).
-9. **Search form action removed.** It posted the visitor and their query to
-   `https://lavaleaforganics.com/search`, which answers and mints a session.
-10. **`no-referrer` referrer policy.** Outbound navigation still goes to the client's real
-    site by design — but without this the preview's URL travels as the `Referer` and lands
-    in the client's own analytics as an unexplained traffic source.
+1. **`noindex, nofollow, noarchive, nosnippet`** on every page. The source served
+   `index, follow`. A public duplicate must not compete with the client's site in search.
+2. **Social/unfurl metadata rewritten** on every page. `og:`/`twitter:` tags named the client and
+   hotlinked their logo from their own server; `noindex` does not stop link-preview crawlers
+   (Slack, Teams, Facebook, X, LinkedIn, Discord, iMessage), so a pasted link rendered a card
+   indistinguishable from the official business. They now identify each page as an unofficial
+   preview and point at the preview's own URL; social images were removed. `schema.org` JSON-LD
+   blocks asserting the business identity were removed. None of this is rendered.
+3. **Google Search Console ownership token removed.**
+4. **All programmatic calls to the client's production systems are blocked** by a global
+   transport guard, the first `<script>` on every page, wrapping `fetch`, `XMLHttpRequest` and
+   `navigator.sendBeacon`. It guards the transport rather than each caller, because the
+   production URLs arrive as inline configuration consumed by other files.
+5. **First-party analytics, Google Tag Manager, Microsoft Clarity and an identity/ad-tech
+   script removed**, along with their captured payloads.
+6. **The client's back-office path blanked** from inline configuration.
+7. **The live ordering menu is not embedded.** `/shop` loads the client's real, orderable menu from
+   their e-commerce provider in an iframe. A public, unofficial copy must not host a working order
+   flow, so it is replaced by an inert placeholder of exactly the same size (an empty frame that
+   loads nothing). The live capture of this page shows that region blank anyway.
+8. **Maps are static images.** The site's Google Maps embeds use the client's API key, which is
+   locked to their own domain: on this preview every map showed Google's "Oops! Something went
+   wrong" box while still sending requests with their key. Each map is now a static image of the
+   same map as the live site renders it, in the same frame, so the layout is unchanged.
+9. **Hotlinked images localised** to byte-identical local copies (matched by content hash, never
+   by filename).
+10. **Images that are broken for everyone were neutralised.** One page loads nine images from a
+    third-party host whose TLS certificate is not valid for that hostname, so no browser can load
+    them — they are broken on the live site too. Their URLs were replaced with a transparent
+    placeholder so the preview does not send visitors to that host.
+11. **Internal infrastructure identifiers removed**: a staging hostname and a tenant path segment
+    that are not public on the client's site were replaced with neutral equivalents.
+12. **Page structure repairs, so the multi-page bundle behaves like the site** (details in
+    PROVENANCE.md): links between pages rewritten to the sibling files; canonical links restored to
+    the client's URLs; links that the capture had corrupted repaired; each page's inline styles
+    split back into the separate `<style>` elements the source uses, so a malformed rule in one
+    cannot swallow the next (it had silently dropped a section's spacing on `contact-us`).
+13. **Search form action removed**, and a **`no-referrer`** policy added so outbound navigation does
+    not reveal this preview's URL to the client's analytics.
 
-`<link rel="canonical">` still points at `https://lavaleaforganics.com/` — correct, since
-the client's page is the canonical original. This is deliberately **not** treated the same
-way as `og:url`: canonical consolidates search signal to the real site, whereas `og:` drives
-unfurl cards that must not impersonate the business.
+`<link rel="canonical">` points at the client's page on every page — correct for a duplicate,
+and deliberately different from `og:url`, which drives unfurl cards.
 
-`audit.json` is **not** published. It carries absolute build paths from the machine that
-made the capture.
+`audit.json` is **not** published: it carries absolute build paths from the capture machine.
 
 ## Known limits
 
-- **The cart drawer stays empty.** It hydrates from `/dispenza/ajax/cart_html` on a backend
-  that does not exist here, and the same-origin guard now refuses the call. It renders as an
-  inert empty shell and nothing leaves the browser. No static bundle can satisfy it.
-- **Navigation still leaves the preview.** Clicking a nav link (HOME, SHOP, ABOUT, CONTACT,
-  ORDER NOW) takes you to the real site. That is intended for a preview, and is *not* blocked
-  by the guard, which covers programmatic requests only. The `no-referrer` policy keeps this
-  preview's URL out of the client's analytics.
-- **The favicon is the client's logo**, served from a local copy. The browser tab therefore
-  shows the client's mark.
+- **The cart and the shop menu are inert.** The cart hydrates from a backend that does not exist
+  here; the menu is deliberately not embedded (change 7).
+- **Maps are pictures**, not interactive maps (change 8).
+- **Links to pages outside this set** (the cart, checkout, the online menu) still go to the real
+  site. That is intended for a preview; the guard blocks programmatic requests, not navigation.
+- **The favicon is the client's logo**, served from a local copy.
 
 ## Residual risks not addressed here
 
-Recorded so they are not mistaken for oversights.
-
-- **No on-page disclosure.** Nothing *rendered* tells a visitor this is not the official
-  site — the disclosure lives in `<head>` metadata and in this file. A visible banner would
-  fix it but would break the pixel fidelity that is the point of the artifact.
-- **The public org exposes the client roster.** `SGENCMS` hosts several public `client-*`
-  Pages sites naming other businesses. That is an org-level hosting decision.
-- **No framing or CSP headers.** GitHub Pages cannot set response headers, so this
-  pixel-accurate replica can be embedded in an iframe by anyone.
-- **The commit metadata is public**, including the committer email.
-- **The Google Map draws on the client's Maps API key** (see Gate 13 above).
-- **Proprietary webfonts are re-served.** `_xorigin/fonts.gstatic.com/s/googlesans*/`
-  contains ~100 Google Sans / Google Sans Text `.woff2` files, captured because the mirrored
-  Maps embed references them. Google Sans is **not** an open-licensed family like the rest of
-  Google Fonts, and re-serving it from a third-party host is not clearly permitted. They were
-  left in place rather than deleted because they *are* referenced — removing them would change
-  what the map renders — so this is flagged as a decision, not treated as settled.
+- **An earlier version of this repository remains fetchable by commit hash.** It was replaced by a
+  force-push, which makes the old commit unreachable but does not delete it from GitHub. That
+  version included an expired third-party credential and internal hostnames. Only deleting and
+  recreating the repository removes it.
+- **No on-page disclosure.** Nothing *rendered* says this is not the official site; the disclosure
+  lives in `<head>` metadata and in this file. A banner would break pixel fidelity.
+- **The public organisation lists other clients' previews.** An org-level hosting decision.
+- **No framing or CSP headers** — GitHub Pages cannot set response headers.
+- **Commit metadata is public**, including the committer email.
 
 ## License / ownership
 
-All site content, imagery, trademarks and branding belong to Lava Leaf Organics. This
-repository is an unaffiliated development artifact and asserts no rights over them.
+All site content, imagery, trademarks and branding belong to Lava Leaf Organics. This repository
+is an unaffiliated development artifact and asserts no rights over them.
